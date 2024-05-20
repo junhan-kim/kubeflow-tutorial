@@ -1,0 +1,146 @@
+# PIPELINE DEFINITION
+# Name: metrics-passing-pipeline
+# Outputs:
+#    read-data-metrics_path: system.Metrics
+#    write-data-metrics_path: system.Metrics
+components:
+  comp-read-data:
+    executorLabel: exec-read-data
+    inputDefinitions:
+      artifacts:
+        input_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        metrics_path:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+  comp-write-data:
+    executorLabel: exec-write-data
+    outputDefinitions:
+      artifacts:
+        metrics_path:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+        output_path:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-read-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - read_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef read_data(input_path: Input[Dataset], metrics_path: Output[Metrics]):\n\
+          \    with open(input_path.path, 'r') as f:\n        data = f.read()\n  \
+          \      print(f\"Read data: {data}\")\n    with open(metrics_path.path, 'w')\
+          \ as f:\n        f.write('{\"metrics\": [{\"name\": \"example_metric\",\
+          \ \"numberValue\": 0.95}]}')\n\n"
+        image: python:3.8
+    exec-write-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - write_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef write_data(output_path: Output[Dataset], metrics_path: Output[Metrics]):\n\
+          \    with open(output_path.path, 'w') as f:\n        f.write(\"Hello, Kubeflow!\"\
+          )\n    with open(metrics_path.path, 'w') as f:\n        f.write('{\"metrics\"\
+          : [{\"name\": \"example_metric\", \"numberValue\": 0.9}]}')\n\n"
+        image: python:3.8
+pipelineInfo:
+  name: metrics-passing-pipeline
+root:
+  dag:
+    outputs:
+      artifacts:
+        read-data-metrics_path:
+          artifactSelectors:
+          - outputArtifactKey: metrics_path
+            producerSubtask: read-data
+        write-data-metrics_path:
+          artifactSelectors:
+          - outputArtifactKey: metrics_path
+            producerSubtask: write-data
+    tasks:
+      read-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-read-data
+        dependentTasks:
+        - write-data
+        inputs:
+          artifacts:
+            input_path:
+              taskOutputArtifact:
+                outputArtifactKey: output_path
+                producerTask: write-data
+        taskInfo:
+          name: read-data
+      write-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-write-data
+        taskInfo:
+          name: write-data
+  outputDefinitions:
+    artifacts:
+      read-data-metrics_path:
+        artifactType:
+          schemaTitle: system.Metrics
+          schemaVersion: 0.0.1
+      write-data-metrics_path:
+        artifactType:
+          schemaTitle: system.Metrics
+          schemaVersion: 0.0.1
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.7.0
