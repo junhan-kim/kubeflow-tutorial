@@ -48,7 +48,7 @@ DAG (direct acyclic graph) : 방향이 있고 순환이 없는 그래프
     
 - 전체 구조
     
-![alt text](<resource\Untitled (1).png>)
+![alt text](<resource/Untitled_1.png>)
 
 ### KFServing (KServe)
 
@@ -139,7 +139,7 @@ minikube start --driver=docker
     
 5. 전부 설치 확인
     
-![alt text](<resource\Untitled (2).png>)
+![alt text](<resource/Untitled_2.png>)
     
 
 ### **5. Istio Ingress Gateway 포트 포워딩**
