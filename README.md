@@ -223,6 +223,9 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
     - component는 `@dsl.component` 로 처리
     - pipelines은 `@dsl.pipeline` 으로 처리
     - 데이터를 넘길때는 무조건 keyword argument여야 함. (positional 은 지원되지 않음)
+    - 주의 사항
+        1. 함수 밖에서 선언된 코드는 import 조차도 사용해서는 안됩니다.
+        2. **단,** 해당 python 함수를 component 로 만들 때, **base_image** 로 사용하는 **Docker 이미지**에 들어있는 코드는 함수 내부에 선언하지 않아도 사용할 수 있습니다.
 3. 실행
     1. 명령어로 실행
         
@@ -240,11 +243,12 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
         
 4. 업로드
     
-    이 파일을 kubeflow 대시보드에 업로드
+    이 파일을 kubeflow 대시보드에 pipelines 탭에 업로드
+
+    해당 pipeline을 특정 exp에 할당하고, run하게 되면 
+
+    input, output 값이나 동작 흐름 등을 관찰할 수 있다.
     
-- 주의 사항
-    1. 함수 밖에서 선언된 코드는 import 조차도 사용해서는 안됩니다.
-    2. **단,** 해당 python 함수를 component 로 만들 때, **base_image** 로 사용하는 **Docker 이미지**에 들어있는 코드는 함수 내부에 선언하지 않아도 사용할 수 있습니다.
 
 ### 자원 할당
 - CPU, Mem, GPU
