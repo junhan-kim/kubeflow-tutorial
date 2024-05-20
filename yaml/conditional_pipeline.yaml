@@ -1,0 +1,218 @@
+# PIPELINE DEFINITION
+# Name: conditional-pipeline
+# Description: Small or Large
+# Inputs:
+#    maximum: int [Default: 100.0]
+#    minimum: int [Default: 0.0]
+components:
+  comp-condition-1:
+    dag:
+      tasks:
+        small-num-op:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-small-num-op
+          inputs:
+            parameters:
+              num:
+                componentInputParameter: pipelinechannel--generate-random-op-Output
+          taskInfo:
+            name: small-num-op
+    inputDefinitions:
+      parameters:
+        pipelinechannel--generate-random-op-Output:
+          parameterType: NUMBER_INTEGER
+  comp-condition-2:
+    dag:
+      tasks:
+        large-num-op:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-large-num-op
+          inputs:
+            parameters:
+              num:
+                componentInputParameter: pipelinechannel--generate-random-op-Output
+          taskInfo:
+            name: large-num-op
+    inputDefinitions:
+      parameters:
+        pipelinechannel--generate-random-op-Output:
+          parameterType: NUMBER_INTEGER
+  comp-generate-random-op:
+    executorLabel: exec-generate-random-op
+    inputDefinitions:
+      parameters:
+        maximum:
+          parameterType: NUMBER_INTEGER
+        minimum:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+  comp-large-num-op:
+    executorLabel: exec-large-num-op
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+  comp-small-num-op:
+    executorLabel: exec-small-num-op
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+deploymentSpec:
+  executors:
+    exec-generate-random-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - generate_random_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef generate_random_op(minimum: int, maximum: int) -> int:\n    import\
+          \ random\n\n    result = random.randint(minimum, maximum)\n    print(f\"\
+          Random Integer is : {result}\")\n    return result\n\n"
+        image: python:3.8
+    exec-large-num-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - large_num_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef large_num_op(num: int):\n    print(f\"{num} is Large!\")\n\n"
+        image: python:3.8
+    exec-small-num-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - small_num_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef small_num_op(num: int):\n    print(f\"{num} is Small!\")\n\n"
+        image: python:3.8
+pipelineInfo:
+  description: Small or Large
+  name: conditional-pipeline
+root:
+  dag:
+    tasks:
+      condition-1:
+        componentRef:
+          name: comp-condition-1
+        dependentTasks:
+        - generate-random-op
+        inputs:
+          parameters:
+            pipelinechannel--generate-random-op-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: generate-random-op
+        taskInfo:
+          name: condition-1
+        triggerPolicy:
+          condition: int(inputs.parameter_values['pipelinechannel--generate-random-op-Output'])
+            < 30
+      condition-2:
+        componentRef:
+          name: comp-condition-2
+        dependentTasks:
+        - generate-random-op
+        inputs:
+          parameters:
+            pipelinechannel--generate-random-op-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: generate-random-op
+        taskInfo:
+          name: condition-2
+        triggerPolicy:
+          condition: int(inputs.parameter_values['pipelinechannel--generate-random-op-Output'])
+            >= 30
+      generate-random-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-generate-random-op
+        inputs:
+          parameters:
+            maximum:
+              componentInputParameter: maximum
+            minimum:
+              componentInputParameter: minimum
+        taskInfo:
+          name: generate-random-op
+  inputDefinitions:
+    parameters:
+      maximum:
+        defaultValue: 100.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      minimum:
+        defaultValue: 0.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.7.0

@@ -303,10 +303,6 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
         
     - 사용할 정보를 담은 secret 을 미리 만들어두고, 위의 예시처럼 `add_env_variable` 함수를 사용해서 component(pod) 에서 붙이면, component python code 내부에서는 그냥 `os.environ.get()` 등을 사용하여 활용할 수 있습니다.
 
-### 조건부 파이프라인
-
-### 병렬 파이프라인
-
 
 ### 추가 기능
 https://kubeflow-pipelines.readthedocs.io/en/sdk-2.7.0/
