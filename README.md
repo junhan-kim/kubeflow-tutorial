@@ -1,6 +1,6 @@
 ## Kubeflow
 
-![alt text](resource\Untitled.png)
+![alt text](resource/Untitled.png)
 
 - **Kubernetes를 활용한 머신 러닝 툴킷**
 - experiment, production phase에 따른 동작 방식
