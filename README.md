@@ -247,4 +247,10 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
     2. **단,** 해당 python 함수를 component 로 만들 때, **base_image** 로 사용하는 **Docker 이미지**에 들어있는 코드는 함수 내부에 선언하지 않아도 사용할 수 있습니다.
 
 ### 추가 기능
-1. 파일 기반으로 컴포넌트 간 데이터 전달
+https://kubeflow-pipelines.readthedocs.io/en/sdk-2.7.0/
+나머지 여러 기능은 여길 참고
+- 컴포넌트간 여러 타입 통신, 파일 통신, 메트릭 통신
+- cpu, mem, gpu 등 자원 할당
+- ENV 등의 config 설정
+- 조건부 파이프라인
+- 병렬 파이프라인

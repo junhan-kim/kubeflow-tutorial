@@ -1,4 +1,3 @@
-import kfp.components as comp
 from kfp import dsl
 from kfp.dsl import Dataset, Input, Metrics, Output
 
