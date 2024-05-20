@@ -246,11 +246,67 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
     1. 함수 밖에서 선언된 코드는 import 조차도 사용해서는 안됩니다.
     2. **단,** 해당 python 함수를 component 로 만들 때, **base_image** 로 사용하는 **Docker 이미지**에 들어있는 코드는 함수 내부에 선언하지 않아도 사용할 수 있습니다.
 
+### 자원 할당
+- CPU, Mem, GPU
+    ```
+    @dsl.pipeline(name="add example")
+    def my_pipeline(value_1: int, value_2: int):
+        task_1 = add(value_1=value_1, value_2=value_2).set_cpu_limit('100m').set_memory_limit('1G')
+        task_2 = subtract(value_1=value_1, value_2=value_2)
+        task_3 = multiply(value_1=task_1.output, value_2=task_2.output)
+    ```
+    `ContainerOp`에 메서드 체이닝 형태로 cpu, mem, gpu 등 자원 할당 가능.
+
+    단 gpu의 경우, 해당 component 의 base_image 에 cuda, cudnn, tensorflow-gpu 등 GPU 를 사용할 수 있는 docker image 를 사용해야 정상적으로 사용 가능
+- 볼륨
+
+    ```
+    @dsl.pipeline()
+    def pipeline():
+    ...
+        vop = dsl.VolumeOp(
+            name="v1",
+            resource_name="mypvc",
+            size="1Gi"
+        )
+        
+        use_volume_op = dsl.ContainerOp(
+            name="test",
+            ...
+            pvolumes={"/mnt": vop.volume} # 이렇게 ContainerOp 생성 시, argument 로 지정
+        )
+    ...
+    ```
+    위와 같이 PVC 연동하여 볼륨 설정 가능
+
+    단, k8s 의 동일한 namespace 에 pvc 를 미리 생성해둬야 함
+- Env
+    - k8s 의 동일한 namespace 에 secret 를 미리 생성해둔 뒤, 해당 secret 의 name 과 value 지정하여 다음과 같은 형태로 `add_env_variable` 사용하여 작성
+        
+        ```python
+        @dsl.pipeline()
+        def pipeline():
+        ...
+        	env_var = V1EnvVar(name='example_env', value='env_variable')
+        
+        	use_secret_op = dsl.ContainerOp(
+        	    name="test"
+        	)
+        
+          use_secret_task = use_secret_op("name").add_env_variable(env_var)
+        ...
+        ```
+        
+    - 사용할 정보를 담은 secret 을 미리 만들어두고, 위의 예시처럼 `add_env_variable` 함수를 사용해서 component(pod) 에서 붙이면, component python code 내부에서는 그냥 `os.environ.get()` 등을 사용하여 활용할 수 있습니다.
+
+### 조건부 파이프라인
+
+### 병렬 파이프라인
+
+
 ### 추가 기능
 https://kubeflow-pipelines.readthedocs.io/en/sdk-2.7.0/
-나머지 여러 기능은 여길 참고
-- 컴포넌트간 여러 타입 통신, 파일 통신, 메트릭 통신
-- cpu, mem, gpu 등 자원 할당
-- ENV 등의 config 설정
-- 조건부 파이프라인
-- 병렬 파이프라인
+
+
+### Reference
+https://mlops-for-all.github.io/
